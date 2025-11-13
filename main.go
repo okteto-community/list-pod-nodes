@@ -59,6 +59,35 @@ func main() {
 		os.Exit(1)
 	}
 
+	// Write data rows for Okteto namespace
+	cmdStr := `kubectl get pod -n okteto -o json | jq -r '.items[] | "\(.metadata.name)\t\(.metadata.namespace)\t\(.spec.nodeName)"'`
+	cmd := exec.Command("bash", "-c", cmdStr)
+	output, err := cmd.CombinedOutput()
+
+	if err != nil {
+		fmt.Printf("Error executing command: %v\n", err)
+		return
+	}
+
+	outputStr := strings.TrimSpace(string(output))
+	if outputStr != "" {
+		lines := strings.Split(string(outputStr), "\n")
+		for _, line := range lines {
+			parts := strings.Split(line, "\t")
+			podName := parts[0]
+			namespaceName := parts[1]
+			nodeName := parts[2]
+
+			// Write the row to the CSV file
+			row := []string{podName, namespaceName, "okteto", nodeName}
+			if err := writer.Write(row); err != nil {
+				logger.Error(fmt.Sprintf("Error writing row to CSV: %s", err))
+				os.Exit(1)
+			}
+			fmt.Println(line)
+		}
+	}
+
 	// Write data rows for Preview, Development, and Agent namespaces
 	for _, ns := range nsList {
 		cmdStr := fmt.Sprintf(`
@@ -93,10 +122,5 @@ func main() {
 				fmt.Println(line)
 			}
 		}
-	}
-
-	if err != nil {
-		logger.Error(fmt.Sprintf("There was an error requesting the namespaces: %s", err))
-		os.Exit(1)
 	}
 }
