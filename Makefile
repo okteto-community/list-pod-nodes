@@ -2,7 +2,7 @@
 .PHONY: build clean run all
 
 # Binary name
-BINARY_NAME=pod_nodes
+BINARY_NAME=list_pod_nodes
 
 # Go build command
 build:
