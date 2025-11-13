@@ -53,13 +53,13 @@ func main() {
 	defer writer.Flush()
 
 	// Write headers
-	headers := []string{"Pod Name", "Namespace", "Node Name"}
+	headers := []string{"Pod Name", "Namespace", "Namespace Type", "Node Name"}
 	if err := writer.Write(headers); err != nil {
 		logger.Error(fmt.Sprintf("Error writing headers to CSV: %s", err))
 		os.Exit(1)
 	}
 
-	// Write data rows
+	// Write data rows for Preview, Development, and Agent namespaces
 	for _, ns := range nsList {
 		cmdStr := fmt.Sprintf(`
 		kubectl get pod -n %s -o json | jq -r '
@@ -81,10 +81,11 @@ func main() {
 				parts := strings.Split(line, "\t")
 				podName := parts[0]
 				namespaceName := parts[1]
+				namespaceType := ns.Type
 				nodeName := parts[2]
 
 				// Write the row to the CSV file
-				row := []string{podName, namespaceName, nodeName}
+				row := []string{podName, namespaceName, string(namespaceType), nodeName}
 				if err := writer.Write(row); err != nil {
 					logger.Error(fmt.Sprintf("Error writing row to CSV: %s", err))
 					os.Exit(1)
